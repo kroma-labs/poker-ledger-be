@@ -7,5 +7,5 @@ type NewRoomRequest struct {
 type RoomResponse struct {
 	Code       string         `json:"code"`
 	Status     string         `json:"status"`
-	HostPlayer PlayerResponse `json:"hostPlayer"`
+	HostPlayer PlayerResponse `json:"hostPlayer,omitzero"`
 }

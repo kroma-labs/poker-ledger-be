@@ -4,14 +4,17 @@ import (
 	"context"
 	"time"
 
+	"github.com/itsLeonB/ezutil/v2"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/dto"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/entity"
+	"github.com/kroma-labs/poker-ledger-be/internal/domain/mapper"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/repository"
 	"github.com/kroma-labs/poker-ledger-be/internal/pkg/util"
 )
 
 type RoomUsecase interface {
 	Create(ctx context.Context, request dto.NewRoomRequest) (dto.RoomResponse, error)
+	GetAll(ctx context.Context) ([]dto.RoomResponse, error)
 }
 
 type roomUsecase struct {
@@ -74,4 +77,13 @@ func (ru *roomUsecase) Create(ctx context.Context, request dto.NewRoomRequest) (
 		return nil
 	})
 	return response, err
+}
+
+func (ru *roomUsecase) GetAll(ctx context.Context) ([]dto.RoomResponse, error) {
+	rooms, err := ru.roomRepo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return ezutil.MapSlice(rooms, mapper.RoomToResponse), nil
 }

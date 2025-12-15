@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	GetRooms(ctx context.Context) ([]Room, error)
 	InsertPlayer(ctx context.Context, arg InsertPlayerParams) (Player, error)
 	InsertRoom(ctx context.Context, arg InsertRoomParams) (Room, error)
 }

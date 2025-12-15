@@ -20,6 +20,7 @@ func setupRoutes(r *gin.Engine, handlers *provider.HttpHandlers) {
 		v1 := api.Group("/v1")
 		{
 			v1.POST("/rooms", handlers.Room.HandleCreate())
+			v1.GET("/rooms", handlers.Room.HandleGetAll())
 		}
 	}
 }

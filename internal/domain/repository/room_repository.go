@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/itsLeonB/ezutil/v2"
 	"github.com/kroma-labs/poker-ledger-be/internal/adapters/db/sqlite/sqlc"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/entity"
 	"github.com/rotisserie/eris"
@@ -12,6 +13,7 @@ import (
 
 type RoomRepository interface {
 	Insert(ctx context.Context, room entity.Room) (entity.Room, error)
+	GetAll(ctx context.Context) ([]entity.Room, error)
 }
 
 type roomRepositorySqlc struct {
@@ -62,6 +64,15 @@ func (rr *roomRepositorySqlc) Insert(ctx context.Context, room entity.Room) (ent
 	}, nil
 }
 
+func (rr *roomRepositorySqlc) GetAll(ctx context.Context) ([]entity.Room, error) {
+	rooms, err := rr.querier.GetRooms(ctx)
+	if err != nil {
+		return nil, eris.Wrap(err, "error querying rooms")
+	}
+
+	return ezutil.MapSliceWithError(rooms, roomToEntity)
+}
+
 func (rr *roomRepositorySqlc) getQuerier(ctx context.Context) (sqlc.Querier, error) {
 	ctxValue := ctx.Value(tx)
 	if ctxValue == nil {
@@ -74,4 +85,20 @@ func (rr *roomRepositorySqlc) getQuerier(ctx context.Context) (sqlc.Querier, err
 	}
 
 	return queries, nil
+}
+
+func roomToEntity(room sqlc.Room) (entity.Room, error) {
+	code, ok := room.Code.(string)
+	if !ok {
+		return entity.Room{}, eris.Errorf("error asserting code as string, code is: %T", room.Code)
+	}
+
+	return entity.Room{
+		ID:           int(room.ID),
+		Code:         code,
+		HostPlayerID: int(room.HostPlayerID),
+		Status:       entity.RoomStatus(room.Status),
+		ConfigJSON:   room.ConfigJson.String,
+		CreatedAt:    time.Unix(room.CreatedAt, 0),
+	}, nil
 }

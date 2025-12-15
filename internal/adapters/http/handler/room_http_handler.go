@@ -31,6 +31,22 @@ func (rh *RoomHandler) HandleCreate() gin.HandlerFunc {
 			return
 		}
 
-		ctx.JSON(http.StatusOK, response)
+		ctx.JSON(http.StatusOK, gin.H{
+			"data": response,
+		})
+	}
+}
+
+func (rh *RoomHandler) HandleGetAll() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		response, err := rh.roomUc.GetAll(ctx)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"data": response,
+		})
 	}
 }
