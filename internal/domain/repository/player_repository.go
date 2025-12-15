@@ -18,13 +18,16 @@ type playerRepositorySqlc struct {
 	querier sqlc.Querier
 }
 
-func NewPlayerRepository(db *sql.DB) *playerRepositorySqlc {
+func NewPlayerRepository(db *sql.DB) PlayerRepository {
 	return &playerRepositorySqlc{
 		sqlc.New(db),
 	}
 }
 
-func (pr *playerRepositorySqlc) Insert(ctx context.Context, player entity.Player) (entity.Player, error) {
+func (pr *playerRepositorySqlc) Insert(
+	ctx context.Context,
+	player entity.Player,
+) (entity.Player, error) {
 	querier, err := pr.getQuerier(ctx)
 	if err != nil {
 		return entity.Player{}, err

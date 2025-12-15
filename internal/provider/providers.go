@@ -10,7 +10,7 @@ type Providers struct {
 	DB *sql.DB
 	*Repositories
 	*Usecases
-	*HttpHandlers
+	*HTTPHandlers
 }
 
 func ProvideAll(cfg *config.Config) (*Providers, error) {
@@ -26,7 +26,7 @@ func ProvideAll(cfg *config.Config) (*Providers, error) {
 		db,
 		repos,
 		usecases,
-		provideHttpHandlers(usecases),
+		provideHTTPHandlers(usecases),
 	}, nil
 }
 

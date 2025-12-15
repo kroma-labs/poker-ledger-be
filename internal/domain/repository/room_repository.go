@@ -20,7 +20,7 @@ type roomRepositorySqlc struct {
 	querier sqlc.Querier
 }
 
-func NewRoomRepository(db *sql.DB) *roomRepositorySqlc {
+func NewRoomRepository(db *sql.DB) RoomRepository {
 	return &roomRepositorySqlc{
 		sqlc.New(db),
 	}
@@ -51,7 +51,8 @@ func (rr *roomRepositorySqlc) Insert(ctx context.Context, room entity.Room) (ent
 
 	code, ok := insertedRoom.Code.(string)
 	if !ok {
-		return entity.Room{}, eris.Errorf("error asserting code as string, code is: %T", insertedRoom.Code)
+		return entity.Room{},
+			eris.Errorf("error asserting code as string, code is: %T", insertedRoom.Code)
 	}
 
 	return entity.Room{

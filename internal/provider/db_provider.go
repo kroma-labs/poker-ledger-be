@@ -1,10 +1,11 @@
 package provider
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3" // DB driver
 	"github.com/rotisserie/eris"
 )
 
@@ -18,7 +19,7 @@ func provideDB(dbString string) (*sql.DB, error) {
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(time.Hour)
 
-	if err := db.Ping(); err != nil {
+	if err := db.PingContext(context.Background()); err != nil {
 		db.Close()
 		return nil, eris.Wrap(err, "error pinging sqlite database after opening connection")
 	}

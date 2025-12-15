@@ -9,7 +9,7 @@ import (
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/entity"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/mapper"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/repository"
-	"github.com/kroma-labs/poker-ledger-be/internal/pkg/util"
+	"github.com/kroma-labs/poker-ledger-be/internal/pkg/stringutil"
 )
 
 type RoomUsecase interface {
@@ -27,7 +27,7 @@ func NewRoomUsecase(
 	transactor repository.Transactor,
 	roomRepo repository.RoomRepository,
 	playerRepo repository.PlayerRepository,
-) *roomUsecase {
+) RoomUsecase {
 	return &roomUsecase{
 		transactor,
 		roomRepo,
@@ -35,7 +35,10 @@ func NewRoomUsecase(
 	}
 }
 
-func (ru *roomUsecase) Create(ctx context.Context, request dto.NewRoomRequest) (dto.RoomResponse, error) {
+func (ru *roomUsecase) Create(
+	ctx context.Context,
+	request dto.NewRoomRequest,
+) (dto.RoomResponse, error) {
 	var response dto.RoomResponse
 	err := ru.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 		newHost := entity.Player{
@@ -48,7 +51,7 @@ func (ru *roomUsecase) Create(ctx context.Context, request dto.NewRoomRequest) (
 			return err
 		}
 
-		code, err := util.GenerateRandomString(6)
+		code, err := stringutil.GenerateRandomString(6)
 		if err != nil {
 			return err
 		}

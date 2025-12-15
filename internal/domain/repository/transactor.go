@@ -24,20 +24,23 @@ type transactorSqlc struct {
 
 func NewTransactor(
 	db *sql.DB,
-) *transactorSqlc {
+) Transactor {
 	return &transactorSqlc{
 		db,
 		sqlc.New(db),
 	}
 }
 
-func (t *transactorSqlc) WithinTransaction(ctx context.Context, serviceFn func(context.Context) error) error {
+func (t *transactorSqlc) WithinTransaction(
+	ctx context.Context,
+	serviceFn func(context.Context) error,
+) error {
 	ctxValue := ctx.Value(tx)
 	if ctxValue != nil {
 		return serviceFn(ctx)
 	}
 
-	tx, err := t.db.Begin()
+	tx, err := t.db.BeginTx(ctx, nil)
 	if err != nil {
 		return eris.Wrap(err, "error starting SQL transaction")
 	}
@@ -47,9 +50,10 @@ func (t *transactorSqlc) WithinTransaction(ctx context.Context, serviceFn func(c
 			if txErr.Error() == "sql: transaction has already been committed or rolled back" {
 				return
 			}
-			logger.Logger.Error(eris.ToString(eris.Wrap(txErr, "error rolling back transaction"), true))
+			logger.Logger.Error(
+				eris.ToString(eris.Wrap(txErr, "error rolling back transaction"), true),
+			)
 		}
-
 	}()
 
 	txQueries := t.queries.WithTx(tx)

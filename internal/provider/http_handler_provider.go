@@ -2,12 +2,12 @@ package provider
 
 import "github.com/kroma-labs/poker-ledger-be/internal/adapters/http/handler"
 
-type HttpHandlers struct {
+type HTTPHandlers struct {
 	Room *handler.RoomHandler
 }
 
-func provideHttpHandlers(usecases *Usecases) *HttpHandlers {
-	return &HttpHandlers{
+func provideHTTPHandlers(usecases *Usecases) *HTTPHandlers {
+	return &HTTPHandlers{
 		handler.NewRoomHandler(usecases.Room),
 	}
 }
