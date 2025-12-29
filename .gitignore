@@ -36,3 +36,6 @@ main
 .agent
 .opencode
 .claude
+
+# Databases
+*.sqlite

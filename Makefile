@@ -116,3 +116,13 @@ migrate-create: build
 	@echo "creating database migration"
 	@echo
 	@goose -dir db/migrations create ${name} sql                          
+
+sqlite-dump:
+	@echo
+	@echo "dumping sqlite database"
+	@echo
+	@sqlite3 ./internal/adapters/db/sqlite/db.sqlite .schema > ./internal/adapters/db/sqlite/schema.sql
+
+http-hot:
+	@echo "🚀 Starting HTTP server with hot reload..."
+	air --build.cmd "go build -o bin/http ./cmd/http" --build.bin "./bin/http"
