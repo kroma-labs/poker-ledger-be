@@ -2,10 +2,7 @@ package repository
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
-	"github.com/kroma-labs/poker-ledger-be/internal/adapters/db/sqlite/sqlc"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/entity"
 	"github.com/rotisserie/eris"
 )
@@ -14,47 +11,33 @@ type PlayerRepository interface {
 	Insert(ctx context.Context, player entity.Player) (entity.Player, error)
 }
 
-type playerRepositorySqlc struct {
-	querier sqlc.Querier
+type playerRepositorySqlx struct {
+	t Transactor
 }
 
-func NewPlayerRepository(db *sql.DB) *playerRepositorySqlc {
-	return &playerRepositorySqlc{
-		sqlc.New(db),
-	}
+func NewPlayerRepository(t Transactor) PlayerRepository {
+	return &playerRepositorySqlx{t}
 }
 
-func (pr *playerRepositorySqlc) Insert(ctx context.Context, player entity.Player) (entity.Player, error) {
-	querier, err := pr.getQuerier(ctx)
+func (pr *playerRepositorySqlx) Insert(ctx context.Context, player entity.Player) (entity.Player, error) {
+	exec := pr.t.GetExecutor(ctx)
+
+	query := `
+		INSERT INTO players (name, created_at)
+		VALUES (:name, :created_at)
+		RETURNING *`
+
+	// Convert named query to positional with args
+	boundQuery, args, err := exec.BindNamed(query, player)
 	if err != nil {
-		return entity.Player{}, err
+		return entity.Player{}, eris.Wrap(err, "failed to bind named query")
 	}
 
-	insertedPlayer, err := querier.InsertPlayer(ctx, sqlc.InsertPlayerParams{
-		Name:      player.Name,
-		CreatedAt: player.CreatedAt.Unix(),
-	})
-	if err != nil {
-		return entity.Player{}, eris.Wrap(err, "error inserting player")
+	// Use context-aware method with positional args
+	row := exec.QueryRowxContext(ctx, boundQuery, args...)
+	if err := row.StructScan(&player); err != nil {
+		return entity.Player{}, eris.Wrap(err, "failed to insert player")
 	}
 
-	return entity.Player{
-		ID:        int(insertedPlayer.ID),
-		Name:      insertedPlayer.Name,
-		CreatedAt: time.Unix(insertedPlayer.CreatedAt, 0),
-	}, nil
-}
-
-func (pr *playerRepositorySqlc) getQuerier(ctx context.Context) (sqlc.Querier, error) {
-	ctxValue := ctx.Value(tx)
-	if ctxValue == nil {
-		return pr.querier, nil
-	}
-
-	queries, ok := ctxValue.(sqlc.Querier)
-	if !ok {
-		return nil, eris.Errorf("error asserting tx as sqlc.Querier. tx is: %T", ctxValue)
-	}
-
-	return queries, nil
+	return player, nil
 }

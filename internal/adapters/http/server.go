@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,10 +18,10 @@ func Setup(configs *config.Config) (*ginkgo.HttpServer, error) {
 
 	r := gin.Default()
 
-	setupRoutes(r, providers.HttpHandlers)
+	setupRoutes(r, providers.HTTPHandlers)
 
 	srv := &http.Server{
-		Addr:              fmt.Sprintf(":%s", configs.Port),
+		Addr:              ":" + configs.Port,
 		Handler:           r,
 		ReadTimeout:       configs.Timeout,
 		ReadHeaderTimeout: configs.Timeout,

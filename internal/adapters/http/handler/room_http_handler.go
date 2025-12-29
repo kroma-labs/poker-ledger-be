@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/dto"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/usecase"
-	"github.com/kroma-labs/poker-ledger-be/internal/pkg/util"
+	"github.com/kroma-labs/poker-ledger-be/internal/pkg/requestutil"
 )
 
 type RoomHandler struct {
@@ -19,7 +19,7 @@ func NewRoomHandler(roomUc usecase.RoomUsecase) *RoomHandler {
 
 func (rh *RoomHandler) HandleCreate() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		request, err := util.BindJSON[dto.NewRoomRequest](ctx)
+		request, err := requestutil.BindJSON[dto.NewRoomRequest](ctx)
 		if err != nil {
 			_ = ctx.Error(err)
 			return

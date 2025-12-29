@@ -2,11 +2,7 @@ package repository
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
-	"github.com/itsLeonB/ezutil/v2"
-	"github.com/kroma-labs/poker-ledger-be/internal/adapters/db/sqlite/sqlc"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/entity"
 	"github.com/rotisserie/eris"
 )
@@ -16,89 +12,43 @@ type RoomRepository interface {
 	GetAll(ctx context.Context) ([]entity.Room, error)
 }
 
-type roomRepositorySqlc struct {
-	querier sqlc.Querier
+type roomRepositorySqlx struct {
+	t Transactor
 }
 
-func NewRoomRepository(db *sql.DB) *roomRepositorySqlc {
-	return &roomRepositorySqlc{
-		sqlc.New(db),
-	}
+func NewRoomRepository(t Transactor) RoomRepository {
+	return &roomRepositorySqlx{t}
 }
 
-func (rr *roomRepositorySqlc) Insert(ctx context.Context, room entity.Room) (entity.Room, error) {
-	querier, err := rr.getQuerier(ctx)
+func (rr *roomRepositorySqlx) Insert(ctx context.Context, room entity.Room) (entity.Room, error) {
+	query := `
+		INSERT INTO rooms (code, host_player_id, status, config_json, created_at)
+		VALUES (:code, :host_player_id, :status, :config_json, :created_at)
+		RETURNING *`
+
+	exec := rr.t.GetExecutor(ctx)
+
+	boundQuery, args, err := exec.BindNamed(query, room)
 	if err != nil {
-		return entity.Room{}, err
+		return entity.Room{}, eris.Wrap(err, "failed to bind named query")
 	}
 
-	configJSON := sql.NullString{}
-	if room.ConfigJSON != "" {
-		configJSON.String = room.ConfigJSON
-		configJSON.Valid = true
+	row := exec.QueryRowxContext(ctx, boundQuery, args...)
+	if err := row.StructScan(&room); err != nil {
+		return entity.Room{}, eris.Wrap(err, "failed to insert room")
 	}
 
-	insertedRoom, err := querier.InsertRoom(ctx, sqlc.InsertRoomParams{
-		Code:         room.Code,
-		HostPlayerID: int64(room.HostPlayerID),
-		Status:       string(room.Status),
-		ConfigJson:   configJSON,
-		CreatedAt:    room.CreatedAt.Unix(),
-	})
-	if err != nil {
-		return entity.Room{}, eris.Wrap(err, "error inserting room")
-	}
-
-	code, ok := insertedRoom.Code.(string)
-	if !ok {
-		return entity.Room{}, eris.Errorf("error asserting code as string, code is: %T", insertedRoom.Code)
-	}
-
-	return entity.Room{
-		ID:           int(insertedRoom.ID),
-		Code:         code,
-		HostPlayerID: int(insertedRoom.HostPlayerID),
-		Status:       entity.RoomStatus(insertedRoom.Status),
-		ConfigJSON:   insertedRoom.ConfigJson.String,
-		CreatedAt:    time.Unix(insertedRoom.CreatedAt, 0),
-	}, nil
+	return room, nil
 }
 
-func (rr *roomRepositorySqlc) GetAll(ctx context.Context) ([]entity.Room, error) {
-	rooms, err := rr.querier.GetRooms(ctx)
-	if err != nil {
+func (rr *roomRepositorySqlx) GetAll(ctx context.Context) ([]entity.Room, error) {
+	query := `SELECT * FROM rooms`
+
+	exec := rr.t.GetExecutor(ctx)
+	var rooms []entity.Room
+	if err := exec.SelectContext(ctx, &rooms, query); err != nil {
 		return nil, eris.Wrap(err, "error querying rooms")
 	}
 
-	return ezutil.MapSliceWithError(rooms, roomToEntity)
-}
-
-func (rr *roomRepositorySqlc) getQuerier(ctx context.Context) (sqlc.Querier, error) {
-	ctxValue := ctx.Value(tx)
-	if ctxValue == nil {
-		return rr.querier, nil
-	}
-
-	queries, ok := ctxValue.(sqlc.Querier)
-	if !ok {
-		return nil, eris.Errorf("error asserting tx as sqlc.Querier. tx is: %T", ctxValue)
-	}
-
-	return queries, nil
-}
-
-func roomToEntity(room sqlc.Room) (entity.Room, error) {
-	code, ok := room.Code.(string)
-	if !ok {
-		return entity.Room{}, eris.Errorf("error asserting code as string, code is: %T", room.Code)
-	}
-
-	return entity.Room{
-		ID:           int(room.ID),
-		Code:         code,
-		HostPlayerID: int(room.HostPlayerID),
-		Status:       entity.RoomStatus(room.Status),
-		ConfigJSON:   room.ConfigJson.String,
-		CreatedAt:    time.Unix(room.CreatedAt, 0),
-	}, nil
+	return rooms, nil
 }

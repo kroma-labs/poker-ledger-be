@@ -1,8 +1,7 @@
 package provider
 
 import (
-	"database/sql"
-
+	"github.com/jmoiron/sqlx"
 	"github.com/kroma-labs/poker-ledger-be/internal/domain/repository"
 )
 
@@ -12,10 +11,11 @@ type Repositories struct {
 	Room       repository.RoomRepository
 }
 
-func provideRepositories(db *sql.DB) *Repositories {
+func provideRepositories(db *sqlx.DB) *Repositories {
+	t := repository.NewTransactor(db)
 	return &Repositories{
-		repository.NewTransactor(db),
-		repository.NewPlayerRepository(db),
-		repository.NewRoomRepository(db),
+		t,
+		repository.NewPlayerRepository(t),
+		repository.NewRoomRepository(t),
 	}
 }

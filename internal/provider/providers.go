@@ -1,16 +1,15 @@
 package provider
 
 import (
-	"database/sql"
-
+	"github.com/jmoiron/sqlx"
 	"github.com/kroma-labs/poker-ledger-be/internal/pkg/config"
 )
 
 type Providers struct {
-	DB *sql.DB
+	DB *sqlx.DB
 	*Repositories
 	*Usecases
-	*HttpHandlers
+	*HTTPHandlers
 }
 
 func ProvideAll(cfg *config.Config) (*Providers, error) {
@@ -26,7 +25,7 @@ func ProvideAll(cfg *config.Config) (*Providers, error) {
 		db,
 		repos,
 		usecases,
-		provideHttpHandlers(usecases),
+		provideHTTPHandlers(usecases),
 	}, nil
 }
 

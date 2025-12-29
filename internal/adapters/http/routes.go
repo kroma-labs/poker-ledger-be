@@ -8,7 +8,7 @@ import (
 	"github.com/kroma-labs/poker-ledger-be/internal/provider"
 )
 
-func setupRoutes(r *gin.Engine, handlers *provider.HttpHandlers) {
+func setupRoutes(r *gin.Engine, handlers *provider.HTTPHandlers) {
 	r.Use(middleware.Error())
 
 	r.GET("/health", func(ctx *gin.Context) {

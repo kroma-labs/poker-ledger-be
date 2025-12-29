@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -13,10 +14,10 @@ const (
 )
 
 type Room struct {
-	ID           int
-	Code         string
-	HostPlayerID int
-	Status       RoomStatus
-	ConfigJSON   string
-	CreatedAt    time.Time
+	ID           int            `db:"id"`
+	Code         string         `db:"code"`
+	HostPlayerID int            `db:"host_player_id"`
+	Status       RoomStatus     `db:"status"`
+	ConfigJSON   sql.NullString `db:"config_json"`
+	CreatedAt    time.Time      `db:"created_at"`
 }
